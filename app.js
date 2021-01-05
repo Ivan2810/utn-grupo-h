@@ -10,7 +10,7 @@ app.use(express.json()); //permite el mapeo de la peticion json a object js
 const conexion = mysql.createConnection({
     host: 'localhost',
 	user: 'root',
-	password: 'root',
+	//password: 'root',
 	database: 'biblioteca'
 });
 
@@ -284,178 +284,157 @@ app.delete('/persona/:id', async (req, res) =>{
  * 
  * Ruta -> /lista
  */
+app.post('/libro', async (req, res) => {
+    try {
+       /*
+       La estructura de lo que me van a mandar tiene tanto el encabezado
+       como los items, seria:
+           nombre: "Lista de ejemplo",
+           items: [
+               {
+                   libro_id: 11,
+                   cantidad: 11,
+               },
+               {
+                   libro_id: 22,
+                   cantidad: 11,
+                   
+               }
+           ]
+       Nosotros tenemos que:
+       1. Guardar el nombre en la tabla listaencabezado
+       2. Tomar el id que le asigno la base de datos a ese encabezado
+       3. Guardar cada uno de los items incluyendo el id del encabezado
+       verificando previamente que los libros existan
+       */    
+
+       if (!req.body.nombre || req.body.items.length == 0) {
+           throw new Error('Existen errores que impiden guardar');
+       }
+       
+       // Verifico que los ids de libros existan todos
+       // Ref: https://developer.mozilla.org/es/docs/Web/JavaScript/Referencia/Objetos_globales/Array/some
+       const existen = req.body.items.some(async item =>{
+           const query = 'SELECT id FROM producto WHERE id = ?';
+           const respuesta = await qy(query, item.libro_id);
+
+           if (respuesta.length == 0) {
+               return false;
+           }
+           else {
+               return true;
+           }
+       });
+
+       if (!existen) {
+           throw new Error('No existe la categoría indicada')
+       }
+
+       // Guardo el encabezado, no me importa que sea unico por eso
+       // no compruebo que el nombre sea unico
+
+       let query = 'INSERT INTO listaencabezado (nombre) VALUE (?)';
+       let respuesta = await qy(query, [req.body.nombre]);
+
+       const encabezado_id = respuesta.insertId;
+
+       // Ref: https://developer.mozilla.org/es/docs/Web/JavaScript/Referencia/Objetos_globales/Array/map
+       const items = req.body.items.map(item =>{
+           i= {
+               libro_id: item.libro_id,
+               cantidad: item.cantidad,
+               listaencabezado_id: encabezado_id
+           }
+
+           return i;
+       });
+
+       // Guardo los items
+       // Ref: https://www.w3schools.com/nodejs/nodejs_mysql_insert.asp
+
+       query = 'INSERT INTO listaitems (libro_id, cantidad, listaencabezado_id) VALUES ?';
+
+       const values = items.map(item=>Object.values(item));
+
+       respuesta = await qy(query, [values]);
+
+       console.log(respuesta);
+       res.send({'respuesta':respuesta});
+
+    }
+   catch(e){
+      console.error(e.message);
+      res.status(413).send({"Error": e.message});
+  }
+});
  
-  app.post('/lista', async (req, res) => {
-     try {
-        /*
-        La estructura de lo que me van a mandar tiene tanto el encabezado
-        como los items, seria:
-            nombre: "Lista de ejemplo",
-            items: [
-                {
-                    producto_id: 11,
-                    cantidad: 11,
-                },
-                {
-                    producto_id: 22,
-                    cantidad: 11,
-                    
-                }
-            ]
-        Nosotros tenemos que:
-        1. Guardar el nombre en la tabla listaencabezado
-        2. Tomar el id que le asigno la base de datos a ese encabezado
-        3. Guardar cada uno de los items incluyendo el id del encabezado
-        verificando previamente que los productos existan
-        */    
+app.get('/libros', async (req, res) =>{
+    try {
+      
+       const query = 'SELECT * FROM listaencabezado';
+       const respuesta = await qy(query);
+       
+       res.send({'respuesta': respuesta});
 
-        if (!req.body.nombre || req.body.items.length == 0) {
-            throw new Error('Existen errores que impiden guardar');
-        }
-        
-        // Verifico que los ids de productos existan todos
-        // Ref: https://developer.mozilla.org/es/docs/Web/JavaScript/Referencia/Objetos_globales/Array/some
-        const existen = req.body.items.some(async item =>{
-            const query = 'SELECT id FROM producto WHERE id = ?';
-            const respuesta = await qy(query, item.producto_id);
-
-            if (respuesta.length == 0) {
-                return false;
-            }
-            else {
-                return true;
-            }
-        });
-
-        if (!existen) {
-            throw new Error('Al menos uno de los productos no existe')
-        }
-
-        // Guardo el encabezado, no me importa que sea unico por eso
-        // no compruebo que el nombre sea unico
-
-        let query = 'INSERT INTO listaencabezado (nombre) VALUE (?)';
-        let respuesta = await qy(query, [req.body.nombre]);
-
-        const encabezado_id = respuesta.insertId;
-
-        // Ref: https://developer.mozilla.org/es/docs/Web/JavaScript/Referencia/Objetos_globales/Array/map
-        const items = req.body.items.map(item =>{
-            i= {
-                producto_id: item.producto_id,
-                cantidad: item.cantidad,
-                listaencabezado_id: encabezado_id
-            }
-
-            return i;
-        });
-
-        // Guardo los items
-        // Ref: https://www.w3schools.com/nodejs/nodejs_mysql_insert.asp
-
-        query = 'INSERT INTO listaitems (producto_id, cantidad, listaencabezado_id) VALUES ?';
-
-        const values = items.map(item=>Object.values(item));
-
-        respuesta = await qy(query, [values]);
-
-        console.log(respuesta);
-        res.send({'respuesta':respuesta});
-
-     }
+    }
     catch(e){
        console.error(e.message);
        res.status(413).send({"Error": e.message});
    }
- });
-
- app.put('/lista/:id', (req, res) =>{
-    res.status(404).send({"Mensaje": "Metodo no permitido"});
 });
 
-app.delete('/lista/id', async (req, res) =>{
-    try {
-        // Borro todos los items y luego el encabezado
-        let query = 'DELETE FROM listaitems WHERE listaencabezado = ?';
-        let respuesta = await qy(query, [req.params.id]);
+app.get('/libros/:id', async (req, res) =>{
+   try {
+      // Devuelvo lista de libros
 
-        query = 'DELETE FROM listaencabezado WHERE id = ?';
-        respuesta = await qy(query, [req.params.id]);
+      let query = 'SELECT * FROM listaencabezado WHERE id = ?';
+      let respuesta = await qy(query, [req.params.id]);
+      
+      if (respuesta.length == 0) { //Error inesperado
+           throw new Error('No se encuentra ese libro');
+      }
+      
 
-        res.send({"Mensaje": "Se borro correctamente la lista"});
-    }
-    catch(e){
-        console.error(e.message);
-        res.status(413).send({"Error": e.message});
-    }
+      const libro = {
+          encabezado: encabezado,
+          items: respuesta
+      }
+
+      res.send({'respuesta': libro});
+
+   }
+   catch(e){
+      console.error(e.message);
+      res.status(413).send({"Error": e.message});
+  }
 });
 
- app.get('/lista', async (req, res) =>{
-     try {
-        // Devuelvo los encabezados de todas las listas
-        const query = 'SELECT * FROM listaencabezado';
-        const respuesta = await qy(query);
-        
-        res.send({'respuesta': respuesta});
 
-     }
-     catch(e){
-        console.error(e.message);
-        res.status(413).send({"Error": e.message});
-    }
+
+app.put('/libros/:id', (req, res) =>{
+   res.status(404).send({"Mensaje": "no se encontró la persona a la que se le quiere prestar el libro"});
+});
+
+app.put('/libros/:id', (req, res) =>{
+    res.status(404).send({"Mensaje": "error inesperado"});
  });
 
- app.get('/lista/:id', async (req, res) =>{
-    try {
-       // Devuelvo el encabezado y los items de una lista
-
-       let query = 'SELECT * FROM listaencabezado WHERE id = ?';
+app.delete('/libros/id', async (req, res) =>{
+   try {
+       // Borro todos los items y luego el encabezado
+       let query = 'DELETE FROM listaitems WHERE listaencabezado = ?';
        let respuesta = await qy(query, [req.params.id]);
-       
-       if (respuesta.length == 0) { //Hubo error, no encontro el encabezado
-            throw new Error('No se encontro la lista');
-       }
-       
-       // Me guardo en encabezado para despues armar un objeto con los items
-       // si devuelve, como los ids siempre son unicos, va a ser un 
-       // array con una unica posicion (posicion 0 porque los vectores arrancan de cero)
-       const encabezado = respuesta[0]; 
 
-       query = 'SELECT * FROM listaitems WHERE listaencabezado_id = ?';
+       query = 'DELETE FROM listaencabezado WHERE id = ?';
        respuesta = await qy(query, [req.params.id]);
 
-       const lista = {
-           encabezado: encabezado,
-           items: respuesta
-       }
-
-       res.send({'respuesta': lista});
-
-    }
-    catch(e){
+       res.send({"Mensaje": "Ese libro no existe"});
+   }
+   catch(e){
        console.error(e.message);
        res.status(413).send({"Error": e.message});
    }
- });
-
-
-/**
- * BONUS TRACK
- * 
- * Borrado de 1 item de la lista
- */
- app.put('/lista/:id/producto/:producto_id', async (req, res)=>{
-    try {
-        const query = 'DELETE FROM listaitems WHERE id = ? AND listaencabezado_id = ?';
-        const respuesta = await qy(query, [req.params.producto_id, req.params.id]);
-
-        res.send({'Mensaje': "Se borro correctamente"});
-    }
-    catch(e){
-        console.error(e.message);
-        res.status(413).send({"Error": e.message});
-    }
- });
+});
 
 
 

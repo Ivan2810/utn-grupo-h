@@ -104,7 +104,7 @@ const qy = util.promisify(conexion.query).bind(conexion); // permite el uso de a
     }
     catch(e){
         console.error(e.message);
-        res.status(413).send({"Categoria no encontrada": e.message});
+        res.status(413).send({"categoria no encontrada": e.message});
     }
  });
 
@@ -123,7 +123,7 @@ const qy = util.promisify(conexion.query).bind(conexion); // permite el uso de a
 
         respuesta = await qy(query, [req.params.id]);
 
-        res.send({'respuesta': respuesta.affectedRows});
+        res.send({"se borro correctamente":respuesta});
 
      }
      catch(e){
@@ -131,6 +131,11 @@ const qy = util.promisify(conexion.query).bind(conexion); // permite el uso de a
         res.status(413).send({"Error": e.message});
     }
  });
+
+
+
+
+
 /**
 *PERSONA
 *POST '/persona' recibe: {nombre: string, apellido: string, alias: string, email: string} retorna: status: 200, {id: numerico, nombre: string, apellido: string, alias: string, email: string} - status: 413, {mensaje: <descripcion del error>} que puede ser: "faltan datos", "el email ya se encuentra registrado", "error inesperado"
@@ -162,7 +167,7 @@ const qy = util.promisify(conexion.query).bind(conexion); // permite el uso de a
         respuesta = await qy(query, [req.body.nombre.toUpperCase()]);
 
         if (respuesta.length > 0) {
-            throw new Error("Ese nombre de producto ya existe");
+            throw new Error("el email no se puede modificar");
         }
 
         let descripcion = '';
@@ -182,9 +187,9 @@ const qy = util.promisify(conexion.query).bind(conexion); // permite el uso de a
     }
  });
 
- app.get('/producto', async (req, res) => {
+ app.get('/persona', async (req, res) => {
      try {
-        const query = 'SELECT * FROM producto';
+        const query = 'SELECT * FROM persona';
 
         const respuesta = await qy(query);
         res.send({'respuesta': respuesta});
@@ -247,28 +252,23 @@ app.put('/persona/:id', async (req, res) => {
    }
 });
 
-app.delete('/persona/:id', async (req, res) => {
+app.delete('/persona/:id', async (req, res) =>{
     try {
-       let query = 'SELECT * FROM listaitems WHERE producto_id = ?';
+        // Borro todos los items y luego el encabezado
+        let query = 'DELETE FROM personaitems WHERE personaencabezado = ?';
+        let respuesta = await qy(query, [req.params.id]);
 
-       let respuesta = await qy(query, [req.params.id]);
+        query = 'DELETE FROM personaencabezado WHERE id = ?';
+        respuesta = await qy(query, [req.params.id]);
 
-       if (respuesta.length > 0) {
-           throw new Error("Este producto tiene items asociados, no se puede borrar");
-       }
-
-       query = 'DELETE FROM producto WHERE id = ?';
-
-       respuesta = await qy(query, [req.params.id]);
-
-       res.send({'respuesta': respuesta.affectedRows});
-
+        res.send({"Se borro correctamente": respuesta});
     }
     catch(e){
-       console.error(e.message);
-       res.status(413).send({"Error": e.message});
-   }
+        console.error(e.message);
+        res.status(413).send({"Error": e.message});
+    }
 });
+
 /**
 *LIBRO
 *POST '/libro' recibe: {nombre:string, descripcion:string, categoria_id:numero, persona_id:numero/null} devuelve 200 y {id: numero, nombre:string, descripcion:string, categoria_id:numero, persona_id:numero/null} o bien status 413,  {mensaje: <descripcion del error>} que puede ser "error inesperado", "ese libro ya existe", "nombre y categoria son datos obligatorios", "no existe la categoria indicada", "no existe la persona indicada"

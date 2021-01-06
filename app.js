@@ -409,15 +409,55 @@ app.get('/libros/:id', async (req, res) =>{
   }
 });
 
+app.put('/libro/:id', async (req, res)=>{
+    try {
+       
+       if (req.body.nombre != null || req.body.categoria_id != null || req.body.descripcion == null) {
+           throw new Error("Solo se puede modificar la descripcion del libro");
+       }
 
+       
+       let query = 'SELECT * FROM libro WHERE  id = ?';
 
+       let respuesta = await qy(query, [req.params.id]);
+
+       if (respuesta.length == 0) {
+           throw new Error("No se encontro el libro");
+       }
+
+       console.log('podes seguir');
+       
+       id = respuesta[0].id;
+       nombre = respuesta[0].nombre;
+       descripcion = req.body.descripcion;
+       categoria_id = respuesta[0].categoria_id;
+       persona_id = respuesta[0].persona_id;
+
+    
+       query = 'UPDATE libro SET descripcion = ? WHERE id = ?';
+
+       respuesta = await qy(query, [descripcion,req.params.id]);
+
+    
+       res.send({'Registro actualizado': {"Id":req.params.id,"Nombre":nombre,"Descripcion":descripcion,"Categoria ID":categoria_id,"Persona ID":persona_id}});
+
+    }
+    catch(e){
+       console.error(e.message);
+       res.status(413).send({"Error": e.message});
+       res.status(413).send("Error Inesperado");
+   }
+});
+
+//put para cambiar
+/*
 app.put('/libros/:id', (req, res) =>{
    res.status(404).send({"Mensaje": "no se encontró la persona a la que se le quiere prestar el libro"});
 });
 
 app.put('/libros/:id', (req, res) =>{
     res.status(404).send({"Mensaje": "error inesperado"});
- });
+ });*/
 
 app.delete('/libros/id', async (req, res) =>{
    try {

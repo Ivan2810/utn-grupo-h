@@ -408,56 +408,9 @@ app.put('/libro/:id', async (req, res)=>{
    }
 });
 
+
 app.put('/libro/prestar/:id', async (req, res)=>{
     try {
-       
-       if (req.body.nombre != null || req.body.categoria_id != null || req.body.descripcion == null) {
-           throw new Error("Solo se puede modificar la descripcion del libro");
-       }
-
-       
-       let query = 'SELECT * FROM libro WHERE  id = ?';
-
-       let respuesta = await qy(query, [req.params.id]);
-
-       if (respuesta.length == 0) {
-           throw new Error("no se encontro el libro");
-       }
-
-       console.log('se presto correctamente');
-       
-       id = respuesta[0].id;
-       nombre = respuesta[0].nombre;
-       descripcion = req.body.descripcion;
-       categoria_id = respuesta[0].categoria_id;
-       persona_id = respuesta[0].persona_id;
-
-    
-       query = 'UPDATE libro SET descripcion = ? WHERE id = ?';
-
-       respuesta = await qy(query, [descripcion,req.params.id]);
-
-    
-       res.send({'Registro actualizado': {"Id":req.params.id,"Nombre":nombre,"Descripcion":descripcion,"Categoria ID":categoria_id,"Persona ID":persona_id}});
-
-    }
-    catch(e){
-       console.error(e.message);
-       res.status(413).send({"Error": e.message});
-       res.status(413).send("Error Inesperado");
-   }
-});
-
-//*PUT '/libro/devolver/:id' y {} devuelve 200 y {mensaje: "se realizo la devolucion correctamente"} o bien status 413, {mensaje: <descripcion del error>} "error inesperado", "ese libro no estaba prestado!", "ese libro no existe"
-
-
-app.put('/libro/devolver/:id', async (req, res)=>{
-    try {
-       
-       if (req.body.nombre != null || req.body.categoria_id != null || req.body.descripcion == null) {
-           throw new Error("Solo se puede modificar la descripcion del libro");
-       }
-
        
        let query = 'SELECT * FROM libro WHERE  id = ?';
 
@@ -467,47 +420,65 @@ app.put('/libro/devolver/:id', async (req, res)=>{
            throw new Error("No se encontro el libro");
        }
 
-       console.log('se realizo la devolucion correctamente');
-       
-       id = respuesta[0].id;
-       nombre = respuesta[0].nombre;
-       descripcion = req.body.descripcion;
-       categoria_id = respuesta[0].categoria_id;
-       persona_id = respuesta[0].persona_id;
+       if (respuesta[0].persona_id != null ) {
+            throw new Error("El libro ya se encuentra prestado, no se puede prestar hasta que no se devuelva");
+        }
+
+
+        query = 'SELECT * FROM persona WHERE  id = ?';
+
+        respuesta = await qy(query, [req.body.persona_id]);
+
+        if (respuesta.length == 0 ) {
+            throw new Error("no se encontro la persona a la que se quiere prestar el libro");
+        }
+
+        persona_id = req.body.persona_id;
 
     
-       query = 'UPDATE libro SET descripcion = ? WHERE id = ?';
+       query = 'UPDATE libro SET persona_id = ? WHERE id = ?';
 
-       respuesta = await qy(query, [descripcion,req.params.id]);
-
+       respuesta = await qy(query, [persona_id,req.params.id]);
     
-       res.send({'Registro actualizado': {"Id":req.params.id,"Nombre":nombre,"Descripcion":descripcion,"Categoria ID":categoria_id,"Persona ID":persona_id}});
+       res.send('Se presto correctamente');
 
     }
     catch(e){
        console.error(e.message);
        res.status(413).send({"Error": e.message});
-       res.status(413).send("Error Inesperado");
+    //    res.status(413).send("Error Inesperado");
    }
 });
 
-app.delete('/libros/id', async (req, res) =>{
-   try {
-       // Borro todos los items y luego el encabezado
-       let query = 'DELETE FROM listaitems WHERE listaencabezado = ?';
+
+app.put('/libro/devolver/:id', async (req, res)=>{
+    try {
+       
+       let query = 'SELECT * FROM libro WHERE  id = ?';
+
        let respuesta = await qy(query, [req.params.id]);
 
-       query = 'DELETE FROM listaencabezado WHERE id = ?';
-       respuesta = await qy(query, [req.params.id]);
+       if (respuesta.length == 0) {
+           throw new Error("Ese libro no existe");
+       }
 
-       res.send({"Mensaje": "Ese libro no existe"});
-   }
-   catch(e){
+       if (respuesta[0].persona_id == null ) {
+            throw new Error("Ese libro no estaba prestado");
+        }
+    
+       query = 'UPDATE libro SET persona_id = null WHERE id = ?';
+
+       respuesta = await qy(query, [req.params.id]);
+    
+       res.send('Se presto correctamente');
+
+    }
+    catch(e){
        console.error(e.message);
        res.status(413).send({"Error": e.message});
+    //    res.status(413).send("Error Inesperado");
    }
 });
-
 
 
 // Servidor

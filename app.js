@@ -326,10 +326,10 @@ app.post('/libro', async (req, res) => {
   }
 });
  
-app.get('/libros', async (req, res) =>{
+app.get('/libro', async (req, res) =>{
     try {
       
-       const query = 'SELECT * FROM listaencabezado';
+       const query = 'SELECT * FROM libro';
        const respuesta = await qy(query);
        
        res.send({'respuesta': respuesta});
@@ -341,11 +341,11 @@ app.get('/libros', async (req, res) =>{
    }
 });
 
-app.get('/libros/:id', async (req, res) =>{
+app.get('/libro/:id', async (req, res) =>{
    try {
       // Devuelvo lista de libros
 
-      let query = 'SELECT * FROM listaencabezado WHERE id = ?';
+      let query = 'SELECT * FROM libro WHERE id = ?';
       let respuesta = await qy(query, [req.params.id]);
       
       if (respuesta.length == 0) { //Error inesperado

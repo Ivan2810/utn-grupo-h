@@ -367,6 +367,7 @@ app.get('/libros/:id', async (req, res) =>{
   }
 });
 
+
 app.put('/libro/:id', async (req, res)=>{
     try {
        
@@ -374,6 +375,7 @@ app.put('/libro/:id', async (req, res)=>{
            throw new Error("Solo se puede modificar la descripcion del libro");
        }
 
+       
        let query = 'SELECT * FROM libro WHERE  id = ?';
 
        let respuesta = await qy(query, [req.params.id]);

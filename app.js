@@ -28,19 +28,16 @@ const qy = util.promisify(conexion.query).bind(conexion); // permite el uso de a
 
 
 // Desarrollo de la logica de la biblioteca
-//Del github de Lorena
-/**
+
+/*
  * Categoria de libros
  * GET para devolver todas las categorias
  * GET id para devolver uno solo
  * POST guardar una categoria nueva
  * PUT para modificar una categoria existente
  * DELETE para borrar una categoria existente
- * 
- * Ruta -> /categoria
- */
- 
- /**
+*/
+/*
  CATEGORIA
  *POST '/categoria' recibe: {nombre: string} retorna: status: 200, {id: numerico, nombre: string} - status: 413, {mensaje: <descripcion del error>} que puede ser: "faltan datos", "ese nombre de categoria ya existe", "error inesperado"
  *GET '/categoria' retorna: status 200  y [{id:numerico, nombre:string}]  - status: 413 y []
@@ -156,11 +153,7 @@ const qy = util.promisify(conexion.query).bind(conexion); // permite el uso de a
 *PUT '/persona/:id' recibe: {nombre: string, apellido: string, alias: string, email: string} el email no se puede modificar. retorna status 200 y el objeto modificado o bien status 413, {mensaje: <descripcion del error>} "error inesperado", "no se encuentra esa persona"
 *DELETE '/persona/:id' retorna: 200 y {mensaje: "se borro correctamente"} o bien 413, {mensaje: <descripcion del error>} "error inesperado", "no existe esa persona", "esa persona tiene libros asociados, no se puede eliminar"
 */
- /**
-  * Productos
-  * 
-  * Ruta -> /producto
-  */
+
 
  app.post('/persona', async(req, res) => {
     try {

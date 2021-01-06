@@ -459,7 +459,7 @@ app.put('/libros/:id', (req, res) =>{
     res.status(404).send({"Mensaje": "error inesperado"});
  });*/
 
-app.delete('/libros/id', async (req, res) =>{
+app.delete('/libros/:id', async (req, res) =>{
    try {
        // Borro todos los items y luego el encabezado
        let query = 'DELETE FROM listaitems WHERE listaencabezado = ?';
